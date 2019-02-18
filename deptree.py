@@ -142,6 +142,7 @@ class DepTree:
             node = DepTree(name=tree)
             parentnode.children[node] = None
 
+# Todo: move test into the test file
 
 if __name__ == '__main__':
     treeg= {'base': { 'b1': ['cb1a', 'cb1b']

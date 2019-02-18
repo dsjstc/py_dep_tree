@@ -83,6 +83,8 @@ class FDepTree(DepTree):
                 node = FDepTree(filepath=f)
                 parentnode.children[node] = None
 
+# Todo: move these tests into the test file
+
 def eg1():
     sessiondir = Path('/tmp/test')
     clist = FDepTree.globnodes('c*',sessiondir)
