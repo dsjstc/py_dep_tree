@@ -20,27 +20,27 @@ class DeepTree:
     def __init__(self):
         aaa = DepTree(name='aaa')
         aab = DepTree(name='aab')
-        aa = DepTree(name='aa', children=[aaa, aab])
+        aa = DepTree(children=[aaa, aab], name='aa')
         ab = DepTree(name='ab')
-        a = DepTree(name='a', children=[aa, ab])
+        a = DepTree(children=[aa, ab], name='a')
         bb = DepTree(name='bb')
         ba = DepTree(name='ba')
-        b = DepTree(name='b', children=[ba, bb])
-        c = DepTree(name='c', children=[aab])
-        root = DepTree(name='root', children=[a, b, c])
+        b = DepTree(children=[ba, bb], name='b')
+        c = DepTree(children=[aab], name='c')
+        root = DepTree(children=[a, b, c], name='root')
 
         self.root = root
         self.aab = aab
 
-    class MedTree:
-        def __init__(self):
-            aa = DepTree(name='aa')
-            a = DepTree(name='a', children=aa)
-            b = DepTree(name='b')
-            root = DepTree(name='root', children=[a, b])
+class MedTree:
+    def __init__(self):
+        aa = DepTree(name='aa')
+        a = DepTree(children=aa, name='a')
+        b = DepTree(name='b')
+        root = DepTree(children=[a, b], name='root')
 
-            self.root = root
-            self.aa = aa
+        self.root = root
+        self.aa = aa
 
 
 @pytest.fixture
@@ -85,3 +85,15 @@ def test_deeptree_getdirty(deeptree):
 def test_walkdeep(deeptree):
     r = deeptree.root
     r.walk(print)
+
+def test_fromliteral():
+    treeg= {'base': { 'b1': ['cb1a', 'cb1b']
+                     ,'b2': 'cb2'}}
+    root = DepTree.from_dict_tree(tree=treeg)
+
+    def make1dirty(x):
+        if x.name == 'cb2': x.mtime = 5
+
+    root.walk(make1dirty)
+    l = root.getDirty()
+    print(l)

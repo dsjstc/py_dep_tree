@@ -1,5 +1,5 @@
 import inspect
-from collections import OrderedDict
+from pathlib import PosixPath
 
 # Generalized dependency tree.
 # Think of each node as a file which...
@@ -14,13 +14,15 @@ from collections import OrderedDict
 #
 
 class DepTree:
-    def __init__(self, name=None, children=None, mtime=0):
+    def __init__(self, children=None, name=None, mtime=0):
         if children == None:
-            self.children = OrderedDict()
+            self.children = []
         elif type(children) == type(self):
-            self.children = OrderedDict({children:None}) # Protect against common use case
-        else:
+            self.children = [children]
+        elif type(children) == list:
             self.children = children
+        else:
+            assert False
 
         self.knownDirty = False  # IE, has not yet been shown to be dirty
         self.mtime = mtime
@@ -32,7 +34,7 @@ class DepTree:
         # First test all immediate children
         for c in self.children:
             if( c.knownDirty == True
-            or c.mtime >= self.mtime):  # same time can't be known to be clean.
+            or c.mtime > self.mtime):  # NB that *same* time presumed clean.
                 self.knownDirty = True
                 break
 
@@ -50,35 +52,42 @@ class DepTree:
         func(self)
 
     def getDirty(self):
-        # returns a bottom-up ordered list of dirty children
-        dd = self._getDirtyDict()
-        if dd: return list(dd.keys())
-        else: return []
+        # returns a bottom-up ordered list of all the dirty nodes in the tree
 
-    def _getDirtyDict(self):
-        # returns a bottom-up OrderedDict of all the dirty nodes in the tree
-        # the Odict is used to ensure uniqueness and preserve order.
-
-        dirtykids = OrderedDict() # unique and keeps order
+        dirtykids = []
         if len(self.children) == 0:
             return None  # don't want to be appending empty lists
 
         # start with the list of dirty children
         for c in self.children:
-            d = c._getDirtyDict()
-            if d: dirtykids.update( d )
+            dirtlist = c.getDirty()
+            # Add only new elements
+            if not dirtlist:
+                continue
+            for d in dirtlist:
+                if not d in dirtykids:
+                    assert isinstance(d,DepTree)
+                    dirtykids.append( d )
 
         # append self, if dirty
         for c in self.children:
             if( c.knownDirty
             or c.mtime > self.mtime):
                 self.knownDirty = True
-                dirtykids[self]=None
+                if not self in dirtykids:
+                    assert isinstance(self, DepTree)
+                    dirtykids.append(self)
 
         if len(dirtykids) > 0:
             self.knownDirty = True
 
         return dirtykids
+
+    def add_child(self,child):
+        # but don't add dups
+        if not child in self.children:
+            self.children.append(child)
+
 
     def get_name(self):
         if hasattr(self,"name"):
@@ -105,23 +114,25 @@ class DepTree:
         #return 'dep'
 
     def printwalk(self):
-        for d in self._getDirtyDict():
+        for d in self.getDirty():
             print(d)
 
     @staticmethod
-    def appendtree(parentnode, tree):
+    def from_dict_tree(tree, parent=None):
+        # Adds tree to parentnode.  Create parentnode if necessary.
+
         # Step 1: Create root node if necessary
-        if parentnode==None:
+        if parent==None:
             # Create and return the root node
             if len(tree) == 1:
                 # tree root *is* the root node.
                 rootkey = list(tree)[0]
                 root = DepTree(name=rootkey)
-                DepTree.appendtree(root,tree[rootkey])
+                DepTree.from_dict_tree(tree[rootkey], root)
             elif len(tree) > 1:
                 # tree starts wide; create a virtual root node
                 root = DepTree(name=None)
-                DepTree.appendtree(root, tree)
+                DepTree.from_dict_tree(tree, root)
             else:
                 assert False # tree < 1 element?
             return root
@@ -133,25 +144,16 @@ class DepTree:
             # grafts every element in tree as a child of parent
             for k in tree.keys():
                 node = DepTree(name=k)
-                parentnode.children[node] = None
-                DepTree.appendtree(node,tree[k])
+                parent.add_child(node)
+                DepTree.from_dict_tree(tree[k], node)
         elif type(tree) == list:
             for v in tree:
-                DepTree.appendtree(parentnode,v)
+                DepTree.from_dict_tree(v, parent)
         else: # leaf, presumably
             node = DepTree(name=tree)
-            parentnode.children[node] = None
+            parent.add_child(node)
 
 # Todo: move test into the test file
 
 if __name__ == '__main__':
-    treeg= {'base': { 'b1': ['cb1a', 'cb1b']
-                     ,'b2': 'cb2'}}
-    root = DepTree.appendtree(parentnode=None,tree=treeg)
-
-    def make1dirty(x):
-        if x.name == 'cb2': x.mtime = 5
-    root.walk(make1dirty)
-    l = root.getDirty()
-    print(l)
-
+    pass

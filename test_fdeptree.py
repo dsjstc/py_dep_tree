@@ -7,18 +7,15 @@ import tempfile
 
 class MedTree:
     def __init__(self, tempdir):
-        clist = FDepTree.globnodes('c*', tempdir)
-        b1 = FDepTree(Path(tempdir, 'b1'), clist)
-        b2 = FDepTree(Path(tempdir, 'b2'))
-        self.root = FDepTree(Path(tempdir, 'root'), [b1, b2])
+        clist = FDepTree.globnodes('c*', filepath=tempdir)
+        b1 = FDepTree(children=clist, filepath=Path(tempdir,'b1'))
+        b2 = FDepTree(filepath=Path(tempdir,'b2'))
+        self.root = FDepTree([b1, b2], filepath=Path(tempdir, 'root'))
 
-class MedTreeLit:
-    # Same as above, but declared as a literal.
-    def __init__(self, tempdir):
-        mtl = { 'root': [
-                 {'b1': 'c*'}
-                ,{'b2': None }
-            ]}
+med_tree_literal = {'root': [
+        {'b1': 'c*'}
+        , {'b2': None}
+    ]}
 
 @pytest.fixture
 def sessiondir(request):
@@ -32,6 +29,11 @@ def sessiondir(request):
 
     #request.addfinalizer(lambda: shutil.rmtree(hd,ignore_errors=True))
     return hd
+
+@pytest.fixture
+def threedeep(request):
+    root = FDepTree.from_dict_tree(med_tree_literal)
+    return root
 
 def test_globnodes(sessiondir):
     fdlist = FDepTree.globnodes(['c*'],sessiondir)
@@ -52,19 +54,29 @@ def test_dirty(sessiondir):
     assert len(l) == 2
     #for n in l: print(n)
 
-def test_update(sessiondir):
+def test_print(sessiondir):
+    time.sleep(0.005) # required to guarantee an mtime_ns difference
+    c1p = Path(sessiondir,'c1')
+    c1p.touch()
+    mt = MedTree(sessiondir)
+
+    print( mt.root.getDirty() )
+
+
+def test_update(sessiondir,threedeep):
     time.sleep(0.005) # required to guarantee an mtime_ns difference
     c1p = Path(sessiondir,'c1')
     c1p.touch()
 
-    threedeep = MedTree(sessiondir)
-    for n in threedeep.root.getDirty():
+    mt = MedTree(sessiondir)
+    dirtlist = mt.root.getDirty()
+    for n in dirtlist:
+        if not n.filepath: continue
         for c in n.children:
+            if not c.filepath: continue
             time.sleep(0.005)  # required to guarantee an mtime_ns difference
             shutil.copy(c.filepath,n.filepath)
 
-    threedeep2 = MedTree(sessiondir)
-    dirty = threedeep2.root.isDirty()
+    mt2 = MedTree(sessiondir)
+    dirty = mt2.root.isDirty()
     assert not dirty
-
-
