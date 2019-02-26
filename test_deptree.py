@@ -82,9 +82,12 @@ def test_deeptree_getdirty(deeptree):
     assert len(l) == 4
     #for d in l: print(d)
 
-def test_walkdeep(deeptree):
+def test_walkdeep(deeptree,capsys):
     r = deeptree.root
     r.walk(print)
+    out, err = capsys.readouterr()
+    lines = out.splitlines()
+    assert len(lines) == 11
 
 def test_fromliteral():
     treeg= {'base': { 'b1': ['cb1a', 'cb1b']
@@ -96,4 +99,4 @@ def test_fromliteral():
 
     root.walk(make1dirty)
     l = root.getDirty()
-    print(l)
+    #print(l)

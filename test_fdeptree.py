@@ -54,15 +54,6 @@ def test_dirty(sessiondir):
     assert len(l) == 2
     #for n in l: print(n)
 
-def test_print(sessiondir):
-    time.sleep(0.005) # required to guarantee an mtime_ns difference
-    c1p = Path(sessiondir,'c1')
-    c1p.touch()
-    mt = MedTree(sessiondir)
-
-    print( mt.root.getDirty() )
-
-
 def test_update(sessiondir,threedeep):
     time.sleep(0.005) # required to guarantee an mtime_ns difference
     c1p = Path(sessiondir,'c1')
