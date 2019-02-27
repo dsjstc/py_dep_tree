@@ -52,8 +52,8 @@ def test_single_isclean():
     assert not s.isDirty()
 
 def test_double_isclean():
-    child = DepTree()
-    root = DepTree([child])
+    child = DepTree(name='child')
+    root = DepTree(name='root',children=[child])
     assert not root.isDirty()
 
 def test_double_isdirty():
@@ -62,7 +62,7 @@ def test_double_isdirty():
     assert root.isDirty()
 
 def test_deeptree_isdirty(deeptree):
-    deeptree.aab.mtime = 5
+    deeptree.aab._mtime = 5
     assert deeptree.root.isDirty()
 
 def test_double_getdirty():
@@ -72,7 +72,7 @@ def test_double_getdirty():
     assert len(l) == 1
 
 def test_deeptree_getdirty(deeptree):
-    deeptree.aab.mtime = 5
+    deeptree.aab._mtime = 5
     r = deeptree.root
     l = r.getDirty()
     assert l[0].name == 'aa'
@@ -95,7 +95,7 @@ def test_fromliteral():
     root = DepTree.from_dict_tree(tree=treeg)
 
     def make1dirty(x):
-        if x.name == 'cb2': x.mtime = 5
+        if x.name == 'cb2': x._mtime = 5
 
     root.walk(make1dirty)
     l = root.getDirty()

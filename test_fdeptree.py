@@ -7,7 +7,7 @@ import tempfile
 
 class MedTree:
     def __init__(self, tempdir):
-        clist = FDepTree.globnodes('c*', filepath=tempdir)
+        clist = FDepTree.expand_glob_to_nodes('c*', filepath=tempdir)
         b1 = FDepTree(children=clist, filepath=Path(tempdir,'b1'))
         b2 = FDepTree(filepath=Path(tempdir,'b2'))
         self.root = FDepTree([b1, b2], filepath=Path(tempdir, 'root'))
@@ -31,12 +31,20 @@ def sessiondir(request):
     return hd
 
 @pytest.fixture
-def threedeep(request):
-    root = FDepTree.from_dict_tree(med_tree_literal)
+def threedeep(request,sessiondir):
+    root = FDepTree.from_dict_tree(med_tree_literal, filedir=sessiondir)
     return root
 
+def test_from_tree(threedeep,sessiondir):
+    constructed = MedTree(sessiondir).root
+    literal = threedeep
+    assert len(constructed.children) == len(literal.children)
+    assert constructed.children[0].name == literal.children[0].name
+    assert len(constructed.children[1].children) == len(literal.children[1].children)
+
+
 def test_globnodes(sessiondir):
-    fdlist = FDepTree.globnodes(['c*'],sessiondir)
+    fdlist = FDepTree.expand_glob_to_nodes(['c*'], sessiondir)
     assert len(fdlist) == 2
 
 def test_clean(threedeep):

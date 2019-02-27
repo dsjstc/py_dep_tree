@@ -6,7 +6,7 @@ from pathlib import PosixPath
 #   1. may depend on one or more other nodes (dependencies)
 #   2. may be depended on other nodes (dependent)
 #   3. is considered "dirty" (needs rebuild) if any dependency has a later mtime.
-#      ie, (child.mtime > self.mtime)
+#      ie, (child.mtime > self._mtime)
 #
 # This class is essentially virtual -- you must manually set mtimes.  See fdeptree for a useful example
 #
@@ -25,16 +25,21 @@ class DepTree:
             assert False
 
         self.knownDirty = False  # IE, has not yet been shown to be dirty
-        self.mtime = mtime
+        self._mtime = mtime
         self.name = name
+
+    def is_older_than(self, otherDepTree):
+        # IE, does this specific child make Self dirty?
+        return (otherDepTree._mtime > self._mtime)
 
     def isDirty(self):
         # This is only for performance -- it stops recursing a tree as soon as it's known to be dirty.
 
         # First test all immediate children
         for c in self.children:
-            if( c.knownDirty == True
-            or c.mtime > self.mtime):  # NB that *same* time presumed clean.
+            hasnewerchild = self.is_older_than(c)
+            if (c.knownDirty == True
+            or hasnewerchild):
                 self.knownDirty = True
                 break
 
@@ -71,8 +76,9 @@ class DepTree:
 
         # append self, if dirty
         for c in self.children:
+            hasnewerchild = self.is_older_than(c)
             if( c.knownDirty
-            or c.mtime > self.mtime):
+            or hasnewerchild ):
                 self.knownDirty = True
                 if not self in dirtykids:
                     assert isinstance(self, DepTree)

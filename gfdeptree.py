@@ -2,55 +2,62 @@ from pathlib import Path
 from deptree import DepTree
 
 # Dependency tree specialized for files
-# A node is a single file/directory
+# A node is defined by a  glob string indicating a file path.
+from fdeptree import FDepTree
 
-class FDepTree(DepTree):
-    default_dir = Path.home()
+class GFDepTree(FDepTree):
 
-    def __init__(self, children=None, name=None, filepath = None):
+    def __init__(self, children=None, name=None, filepath=None, globstr=None):
         super().__init__(children=children)
 
-        self.name = name
-        if filepath == None:
+        if filepath == None & globstr == None:
             # Virtual root node, in case there are *many* top-level ones
             self.filepath = None
-            self._mtime = float('inf') # Never dirty.
-        else:
+            self._min_mtime = float('inf') # Never dirty.
+        elif globstr == None:
+            # Standard filepath node
             self.filepath = Path(filepath)  # permit string paths
             assert isinstance(filepath,Path)
-            if self.name == None: self.name = filepath.parts[-1]
+            if not name:
+                self.name = filepath.parts[-1]
 
             if filepath.exists():
-                self._mtime = filepath.stat().st_mtime_ns
+                self._max_mtime = self._min_mtime = filepath.stat().st_mtime_ns
             else:
-                self._mtime = 0 # always assumed dirty
+                self._max_mtime = self._min_mtime = 0 # IE, real children are always newer.
+        else:
+            # globstr is defined; make a filelist.
+            # If filepath is defined, it's a directory to prepend to the globstr
+            p = Path(filepath or self.default_dir)
+            self.get_glob_mtimes(p,globstr)
+
+
+    def get_glob_mtimes(self,filepath,globstr):
+        for f in filepath.glob(globstr):
+            mt = f.stat().st_mtime_ns
+            if mt < self._min_mtime: self._min_mtime = mt
+            if mt > self._max_mtime: self._max_mtime = mt
+
+    def is_older_than(self,childGFDepTree):
+        # This specific, non-recursive child makes Self dirty iff...
+        # iff any element of child is newer than any element of self.
+        # EG, if newest element of child is newer than oldest element of self.
+        if isinstance(childGFDepTree,GFDepTree):
+            return childGFDepTree._max_mtime > self._min_mtime
+        else:
+            return childGFDepTree._mtime > self._min_mtime
 
     def __str__(self):
         return ("%s: %r (%s)" % (self.get_name(), self.knownDirty,self.filepath))
 
     @staticmethod
-    def expand_glob_to_nodes(globlist, filepath=Path.cwd(), children=None):
-        # Returns a list of FDepTrees from the argued glob strings
-
-        if type(globlist) == str:
-            globlist = [globlist]
-
-        results = []
-        for g in globlist:
-            files = filepath.glob(g)
-            results.extend(files)
-
-        nodes = []
-        for f in results:
-            c = FDepTree(filepath = f, children=children)
-            nodes.append( c )
-
-        return nodes
-
-    @staticmethod
-    def from_dict_tree(tree, parent=None, filedir = None):
+    def from_dict_tree(tree, parent=None, filedir = None, expand_leaves=True):
         # Same as in deptree, but every leaf might represents
         # a glob of filenames in workdir
+        # expand_leaves = False: keep the leaves as globs.
+
+        assert not expand_leaves # not implemented!
+
         workdir = filedir or FDepTree.default_dir
         assert isinstance(workdir, Path)
 
@@ -61,7 +68,7 @@ class FDepTree(DepTree):
                 # tree root *is* the root node.
                 rootkey = list(tree)[0]
                 root = FDepTree()
-                FDepTree.from_dict_tree(tree[rootkey], root,filedir = workdir)
+                FDepTree.from_dict_tree(tree[rootkey], root)
             elif len(tree) > 1:
                 # tree starts wide; create a virtual root node
                 root = FDepTree()
@@ -77,16 +84,15 @@ class FDepTree(DepTree):
         elif type(tree) == dict:
             # grafts every element in tree as a child of parent
             for k in tree.keys():
-                node = FDepTree(name=k, filepath=Path(workdir,k))
+                node = FDepTree()
                 parent.add_child(node)
-                FDepTree.from_dict_tree(tree[k], node, filedir = workdir)
+                FDepTree.from_dict_tree(tree[k], node)
         elif type(tree) == list:
             for v in tree:
-                FDepTree.from_dict_tree(v, parent, filedir = workdir)
+                FDepTree.from_dict_tree(v, parent)
         else:  # leaf, presumably
             for f in workdir.glob(tree):
-                fn = f.parts[-1]
-                node = FDepTree(name=fn, filepath=f)
+                node = FDepTree(name=f)
                 parent.add_child(node)
 
 def eg1():

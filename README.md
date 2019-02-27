@@ -18,7 +18,18 @@ Every node is a file, characterized by its mtime_ns
 
 _Not yet implemented_
 
-Every node is a regex, characterized by the min and max mtime of all files matching.
+Use case: 
+  - Given a bunch of CSVs in each of many VID directorys 
+    - eg1: .../src/[VID]/*.csv
+    - eg2: .../src/[VID]-*.csv
+  - For each VID filespec, we wish to depend a separate .../db/VID.pickle 
+
+Simple solution:
+  - create every parent db/VID node.
+  - for each such parent, create a regex matching the path of all dependencies
+  - create a dependent regex node.
   
-Dependency paths are defined by a transformed (?) subexpression of the dependency.  
-  - EG, create a separate database file from each maching directory of CSVs. 
+Hard solution:
+  - define a search that extracts the VID from the parent node
+  - use a subexpression to create a dependent node for each match.   
+ 
