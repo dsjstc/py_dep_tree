@@ -2,7 +2,7 @@ import shutil
 import time
 from pathlib import Path
 
-import processor
+import deptree
 import pytest
 
 
@@ -62,8 +62,8 @@ def deepdir(request):
 # PApp tests
 ###########################################
 def test_papp():
-    a1 = processor.get_papp()
-    a2 = processor.get_papp()
+    a1 = deptree.get_papp()
+    a2 = deptree.get_papp()
     assert a1 == a2
     assert a1.basedir == a2.basedir
 
@@ -71,31 +71,31 @@ def test_papp():
 # PSpec tests
 ###########################################
 def test_pspec_single(cleandir):
-    papp = processor.Papp(basedir=cleandir)
-    f = processor.Pspec(specs='final', papp=papp)
-    #f = processor.Pspec('final', h, papp)
+    papp = deptree.Papp(basedir=cleandir)
+    f = deptree.Pspec(specs='final', papp=papp)
+    #f = deptree.Pspec('final', h, papp)
     assert f.dir == Path('/tmp/test/')
     assert f.filecount == 1
     fp = Path(f.dir,'final')
     assert not f.is_partly_older_than(fp)
 
 def test_pspec_wild(cleandir):
-    papp = processor.Papp(basedir=cleandir)
-    a = processor.Pspec('a*',papp=papp)
+    papp = deptree.Papp(basedir=cleandir)
+    a = deptree.Pspec('a*',papp=papp)
     assert a.dir == Path('/tmp/test/')
     assert a.filecount == 2
 
 def test_pspec_multiple(cleandir):
-    papp = processor.Papp(basedir=cleandir)
-    a = processor.Pspec(['a1','a2'],papp=papp)
+    papp = deptree.Papp(basedir=cleandir)
+    a = deptree.Pspec(['a1','a2'],papp=papp)
     assert a.dir == Path('/tmp/test/')
     assert a.filecount == 2
 
 def test_pspec_deep(deepdir):
-    papp = processor.Papp(basedir=deepdir)
-    f = processor.Pspec('db/final',papp=papp)
+    papp = deptree.Papp(basedir=deepdir)
+    f = deptree.Pspec('db/final',papp=papp)
     assert f.filecount == 1
-    a = processor.Pspec('s*/a*',papp=papp)
+    a = deptree.Pspec('s*/a*',papp=papp)
     assert a.filecount == 4
     assert not f.is_partly_older_than(a)
     a11 = Path(deepdir,'src/a11')

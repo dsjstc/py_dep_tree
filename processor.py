@@ -1,7 +1,6 @@
 import sys
 from pathlib import Path
 
-
 # Todo: move paths into configargparse in papp.
 # Todo: change defaultstr to use configargparse values.
 

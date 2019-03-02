@@ -1,5 +1,5 @@
 import pytest
-from deptree import DepTree
+from deptree.deptree import *
 
 # A deeper tree, clean by default, structured as follows:
 '''
