@@ -4,7 +4,7 @@ from pathlib import Path
 
 import deptree
 import pytest
-
+from tempdir import tempfile
 
 @pytest.fixture
 def cleandir(request):
@@ -14,7 +14,7 @@ def cleandir(request):
     /a2
     '''
 
-    base = Path('/tmp/test/')
+    base = Path(tempfile.gettempdir(), 'test/')
     shutil.rmtree(base,ignore_errors=True) # Cleanup before starting
     base.mkdir(parents=True)
     for f in ['a2','a1','final']:
@@ -74,7 +74,7 @@ def test_pspec_single(cleandir):
     papp = deptree.Papp(basedir=cleandir)
     f = deptree.Pspec(specs='final', papp=papp)
     #f = deptree.Pspec('final', h, papp)
-    assert f.dir == Path('/tmp/test/')
+    assert f.dir == cleandir
     assert f.filecount == 1
     fp = Path(f.dir,'final')
     assert not f.is_partly_older_than(fp)
@@ -82,13 +82,13 @@ def test_pspec_single(cleandir):
 def test_pspec_wild(cleandir):
     papp = deptree.Papp(basedir=cleandir)
     a = deptree.Pspec('a*',papp=papp)
-    assert a.dir == Path('/tmp/test/')
+    assert a.dir == cleandir
     assert a.filecount == 2
 
 def test_pspec_multiple(cleandir):
     papp = deptree.Papp(basedir=cleandir)
     a = deptree.Pspec(['a1','a2'],papp=papp)
-    assert a.dir == Path('/tmp/test/')
+    assert a.dir == cleandir
     assert a.filecount == 2
 
 def test_pspec_deep(deepdir):
