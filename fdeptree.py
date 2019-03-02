@@ -89,16 +89,6 @@ class FDepTree(DepTree):
                 node = FDepTree(name=fn, filepath=f)
                 parent.add_child(node)
 
-def eg1():
-    sessiondir = Path('/tmp/test')
-    clist = FDepTree.expand_glob_to_nodes('c*', sessiondir)
-    b1 = FDepTree(clist, Path(sessiondir, 'b1'))
-    b2 = FDepTree(Path(sessiondir, 'b2'))
-    root = FDepTree([b1, b2], Path(sessiondir, 'root'))
-
-    l = root.getDirty()
-    assert len(l) == 0
-
 if __name__ == '__main__':
 #def eg2():
     treeg= {'root': { 'b1': 'c*'

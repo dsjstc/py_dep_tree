@@ -5,14 +5,42 @@ from deptree import DepTree
 # A node is defined by a  glob string indicating a file path.
 from fdeptree import FDepTree
 
-class GFDepTree(FDepTree):
+class Dnode():
+    # This is a single node in a dependency tree.
+    def __init__(self
+                 , children=[]
+                 , name=None
+                 , filepath=None
+                 , globstr=None):
 
-    def __init__(self, children=None, name=None, filepath=None, globstr=None):
-        super().__init__(children=children)
+        assert isinstance(children,list)
+        self.children = list
 
-        if filepath == None & globstr == None:
+        assert (name is None) or isinstance(name,str)
+        self.name = name
+
+        assert (filepath is None) or isinstance(filepath,Path)
+        self.filepath = filepath
+
+        assert (globstr is None) or isinstance(globstr,str)
+        self.globstr = globstr
+
+
+class DTree(DepTree):
+    default_dir = Path.home()
+
+    def __init__(self, root=None):
+        super().__init__(root)
+
+        self.basedir = self.default_dir
+        if filepath:
+            if filepath.isfile():
+                self.basedir = filepath.parent
+            else:
+                self.basedir = filepath
+
+        if (filepath == None) & (globstr == None):
             # Virtual root node, in case there are *many* top-level ones
-            self.filepath = None
             self._min_mtime = float('inf') # Never dirty.
         elif globstr == None:
             # Standard filepath node
@@ -24,10 +52,10 @@ class GFDepTree(FDepTree):
             if filepath.exists():
                 self._max_mtime = self._min_mtime = filepath.stat().st_mtime_ns
             else:
-                self._max_mtime = self._min_mtime = 0 # IE, real children are always newer.
+                self._max_mtime = self._min_mtime = 0 # Not-yet-generated; always dirty.
         else:
-            # globstr is defined; make a filelist.
-            # If filepath is defined, it's a directory to prepend to the globstr
+            # globstr is defined; matches many files.
+            # If filepath is also defined, it's a directory to prepend to the globstr
             p = Path(filepath or self.default_dir)
             self.get_glob_mtimes(p,globstr)
 
@@ -47,13 +75,33 @@ class GFDepTree(FDepTree):
         else:
             return childGFDepTree._mtime > self._min_mtime
 
-    def __str__(self):
-        return ("%s: %r (%s)" % (self.get_name(), self.knownDirty,self.filepath))
+    ####################################################################################
+    # Generation
+
+    @staticmethod
+    def expand_glob_to_nodes(globlist, filepath=Path.cwd(), children=None):
+        # Returns a list of FDepTrees from the argued glob strings
+
+        if type(globlist) == str:
+            globlist = [globlist]
+
+        results = []
+        for g in globlist:
+            files = filepath.glob(g)
+            results.extend(files)
+
+        nodes = []
+        for f in results:
+            c = FDepTree(filepath = f, children=children)
+            nodes.append( c )
+
+        return nodes
 
     @staticmethod
     def from_dict_tree(tree, parent=None, filedir = None, expand_leaves=True):
-        # Same as in deptree, but every leaf might represents
-        # a glob of filenames in workdir
+        # Same as in deptree, but every leaf might represent
+        # a glob of filenames in filedir
+        #
         # expand_leaves = False: keep the leaves as globs.
 
         assert not expand_leaves # not implemented!
@@ -67,7 +115,7 @@ class GFDepTree(FDepTree):
             if len(tree) == 1:
                 # tree root *is* the root node.
                 rootkey = list(tree)[0]
-                root = FDepTree()
+                root = GFDepTree(name=rootkey, filepath=self.str2path(rootkey))
                 FDepTree.from_dict_tree(tree[rootkey], root)
             elif len(tree) > 1:
                 # tree starts wide; create a virtual root node
@@ -95,21 +143,34 @@ class GFDepTree(FDepTree):
                 node = FDepTree(name=f)
                 parent.add_child(node)
 
-def eg1():
-    sessiondir = Path('/tmp/test')
-    clist = FDepTree.expand_glob_to_nodes('c*', sessiondir)
-    b1 = FDepTree(clist, Path(sessiondir, 'b1'))
-    b2 = FDepTree(Path(sessiondir, 'b2'))
-    root = FDepTree([b1, b2], Path(sessiondir, 'root'))
+    ####################################################################################
+    # Utility
+    def str2path(self,stringpath, defaultstr=None):
+        # returns an absolute Path(), expanding a stringpath which is:
+        # Relative: tack on to self.basedir
+        # Absolute: use it.
+        # None: use defaultstr instead.
 
-    l = root.getDirty()
-    assert len(l) == 0
+        if not hasattr(self, 'basedir'):
+            self.basedir = Path.home()
+        if stringpath == None:
+            return Path(self.basedir, defaultstr)
+        elif Path(stringpath).is_absolute():
+            return Path(stringpath)
+        else:  # relative stringpath
+            return Path(self.basedir, stringpath)
+
+
+    def __str__(self):
+        return ("%s: %r (%s)" % (self.get_name(), self.knownDirty, self.filepath))
+
 
 if __name__ == '__main__':
 #def eg2():
     treeg= {'root': { 'b1': 'c*'
                      ,'b2': None}}
 
-    sessiondir = Path('/tmp/test')
+    GFDepTree.default_dir = Path('/tmp/test')
+
     root = FDepTree.from_dict_tree(treeg, None)
     root.walk(print)
