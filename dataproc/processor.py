@@ -1,8 +1,11 @@
 import sys
 from pathlib import Path
+import dataproc.papp
+from typing import Union
+name = 'processor'
 
-# Todo: move paths into configargparse in papp.
-# Todo: change defaultstr to use configargparse values.
+# Todo: expand pspec string to enable a mapped expansion from input list to output list.
+# EG: CRD/([F,A*]) -> cdb-\1.pickle
 
 # Case 1:
 #   /final <-- /a1, /a2
@@ -16,46 +19,6 @@ from pathlib import Path
 # Case n:
 # (VID*)/*.csv -> db/db-\1.pickle
 #    This means process every VID separately.
-from typing import Union
-
-name = 'processor'
-_singleton_papp = None
-
-
-def get_papp(basedir = None):
-    global _singleton_papp
-    if _singleton_papp is None:
-        _singleton_papp = Papp(basedir)
-    elif basedir is not None:
-        assert basedir == _singleton_papp.basedir
-
-    return _singleton_papp
-
-
-# This singleton class provides all global configuration
-class Papp():
-    def __init__(self
-                 , basedir=None     # Root of tree for processing input and output files.
-                 , group_ids=None   # If the data is naturally grouped, the Papp maintains the list of groups
-                 , group_specs=None # Append the last path element (eg, filename) of every file matching these specs to the group_id list.
-                 ):
-        self.basedir = Path.home()
-        self.basedir = self.str2path(basedir)
-
-        assert isinstance(group_ids,list) or isinstance(group_ids,type(None))
-        self.group_ids = group_ids or []
-
-    def str2path(self, stringpath, defaultstr=None):
-        # Determines an absolute path, based on appropriate precedence:
-
-        if stringpath is not None:
-            if Path(stringpath).is_absolute():
-                return Path(stringpath)
-            else:  # relative stringpath
-                return Path(self.basedir, stringpath)
-        else:  # stringpath is None
-            if defaultstr == None: return Path(self.basedir)
-            return Path(self.basedir, defaultstr)
 
 
 def Processor():
@@ -64,7 +27,7 @@ def Processor():
                  , input: Pspec
                  , output: Pspec
                  , singlethreaded: bool = False):
-        self.app = get_papp()
+        self.app = dataproc.papp.get_papp()
 
     def go(self):
         pass
@@ -77,7 +40,7 @@ class Pspec():
 
     def __init__(self, specs:Union[str, Path, list]=None, dir=None, papp=None):
     #def __init__(self, spec=None, dir=None, papp=None):
-        self.app = papp or get_papp()
+        self.app = papp or dataproc.papp.get_papp()
         self.dir = self.app.str2path(dir)
         if isinstance(specs,Path) or isinstance(specs,str):
             self.specs = [specs]
@@ -135,7 +98,7 @@ def Processor():
                  , input: Pspec
                  , output: Pspec
                  , singlethreaded: bool = False):
-        self.app = get_papp()
+        self.app = dataproc.papp.get_papp()
 
         # An inputstr might be
         # 1. A path (no stars, no parens)

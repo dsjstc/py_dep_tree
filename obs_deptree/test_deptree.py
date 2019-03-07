@@ -1,5 +1,5 @@
 import pytest
-from deptree.deptree import *
+from obs_deptree.deptree_base import *
 
 # A deeper tree, clean by default, structured as follows:
 '''

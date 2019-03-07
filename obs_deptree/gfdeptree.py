@@ -1,9 +1,9 @@
 from pathlib import Path
-from deptree import DepTree
+from obs_deptree.deptree_base import DepTree
 
 # Dependency tree specialized for files
 # A node is defined by a  glob string indicating a file path.
-from fdeptree import FDepTree
+from obs_deptree.fdeptree import FDepTree
 
 class Dnode():
     # This is a single node in a dependency tree.

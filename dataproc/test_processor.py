@@ -2,7 +2,7 @@ import shutil
 import time
 from pathlib import Path
 
-import deptree
+import dataproc
 import pytest
 from tempdir import tempfile
 
@@ -42,7 +42,7 @@ def deepdir(request):
             a22
     '''
 
-    base = Path('/tmp/test/')
+    base = Path(tempfile.gettempdir(), 'test/')
     shutil.rmtree(base,ignore_errors=True) # Cleanup before starting
 
     src = Path(base,'src')
@@ -62,8 +62,8 @@ def deepdir(request):
 # PApp tests
 ###########################################
 def test_papp():
-    a1 = deptree.get_papp()
-    a2 = deptree.get_papp()
+    a1 = dataproc.get_papp()
+    a2 = dataproc.get_papp()
     assert a1 == a2
     assert a1.basedir == a2.basedir
 
@@ -71,8 +71,8 @@ def test_papp():
 # PSpec tests
 ###########################################
 def test_pspec_single(cleandir):
-    papp = deptree.Papp(basedir=cleandir)
-    f = deptree.Pspec(specs='final', papp=papp)
+    papp = dataproc.Papp(basedir=cleandir)
+    f = dataproc.Pspec(specs='final', papp=papp)
     #f = deptree.Pspec('final', h, papp)
     assert f.dir == cleandir
     assert f.filecount == 1
@@ -80,22 +80,22 @@ def test_pspec_single(cleandir):
     assert not f.is_partly_older_than(fp)
 
 def test_pspec_wild(cleandir):
-    papp = deptree.Papp(basedir=cleandir)
-    a = deptree.Pspec('a*',papp=papp)
+    papp = dataproc.Papp(basedir=cleandir)
+    a = dataproc.Pspec('a*', papp=papp)
     assert a.dir == cleandir
     assert a.filecount == 2
 
 def test_pspec_multiple(cleandir):
-    papp = deptree.Papp(basedir=cleandir)
-    a = deptree.Pspec(['a1','a2'],papp=papp)
+    papp = dataproc.Papp(basedir=cleandir)
+    a = dataproc.Pspec(['a1', 'a2'], papp=papp)
     assert a.dir == cleandir
     assert a.filecount == 2
 
 def test_pspec_deep(deepdir):
-    papp = deptree.Papp(basedir=deepdir)
-    f = deptree.Pspec('db/final',papp=papp)
+    papp = dataproc.Papp(basedir=deepdir)
+    f = dataproc.Pspec('db/final', papp=papp)
     assert f.filecount == 1
-    a = deptree.Pspec('s*/a*',papp=papp)
+    a = dataproc.Pspec('s*/a*', papp=papp)
     assert a.filecount == 4
     assert not f.is_partly_older_than(a)
     a11 = Path(deepdir,'src/a11')

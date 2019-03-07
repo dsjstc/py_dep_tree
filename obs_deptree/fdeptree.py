@@ -1,5 +1,5 @@
 from pathlib import Path
-from deptree import DepTree
+from obs_deptree.deptree_base import DepTree
 
 # Dependency tree specialized for files
 # A node is a single file/directory

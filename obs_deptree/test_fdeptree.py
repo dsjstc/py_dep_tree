@@ -1,9 +1,9 @@
 import pytest
-from fdeptree import FDepTree
+from obs_deptree.fdeptree import FDepTree
 import shutil
 from pathlib import Path
 import time
-import tempfile
+
 
 class MedTree:
     def __init__(self, tempdir):
