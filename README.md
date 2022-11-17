@@ -1,12 +1,15 @@
-### Dependency Tree
-
-This basically supports Makefile-like dependency checking in python.
+# Dependency Tree
+### What is it?
+This supports Makefile-like dependency checking in python.
 
 The problem boils down to "If file A depends on file B, then check whether file B 
 has been modified more recently than file A."  Obviously, this can get complex with large trees of dependencies that might have 
 interlinking between branches. 
 
-#### DepTree
+### Status
+Written for personal use.  Lacks type checking, testing, and CI.
+
+### DepTree
 
 Nodes are manually created, and are each characterized by a manually set mtime.
 
