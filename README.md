@@ -1,6 +1,6 @@
 # Dependency Tree
 ## Note to reader
-This was written in 2019 to address a personal problem.  It was not intended to be seen or maintained by others... but I have no other nonproprietary code samples.  It's not great code; it's lacking:
+This was written in 2019 to address a structural issue in the codebase for my master's thesis.  It was not intended to ever be seen or maintained by others... but I have no other nonproprietary code samples.  It's not great code; it's lacking:
 
 - type checking
 - proper docstrings
