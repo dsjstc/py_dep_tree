@@ -9,7 +9,8 @@ interlinking between branches.
 ### Status
 Written for personal use.  Lacks type checking, testing, and CI.
 
-### DepTree
+### Elements
+#### DepTree
 
 Nodes are manually created, and are each characterized by a manually set mtime.
 
